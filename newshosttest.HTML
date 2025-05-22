@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyberpunk News Hub</title>
+    <!-- Content Security Policy (CSP) to mitigate XSS and data injection attacks.
+         This policy allows resources from 'self' (the same origin),
+         Google Fonts, Tailwind CSS CDN, and Google APIs for Gemini.
+         'unsafe-inline' for styles is included for Tailwind's JIT mode and inline styles.
+         'unsafe-inline' for scripts is added to allow the embedded JavaScript to execute.
+         In a production environment, 'unsafe-inline' should be minimized
+         and replaced with hashed or nonced scripts/styles where possible for stricter security.
+    -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://www.gstatic.com https://generativelanguage.googleapis.com;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.tailwindcss.com;
+        font-src 'self' https://fonts.gstatic.com;
+        img-src 'self' https://placehold.co; /* Using placehold.co for dynamic placeholders */
+        connect-src 'self' https://generativelanguage.googleapis.com https://*.googleapis.com;
+        object-src 'none';
+        base-uri 'self';
+        form-action 'self';
+        frame-ancestors 'none';
+    ">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom CSS for dark cyberpunk aesthetic */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a0a; /* Very dark background */
+            color: #e0e0e0; /* Light grey text */
+            overflow-x: hidden; /* Prevent horizontal scroll on all screen sizes */
+        }
+
+        .good-vibes-gradient-border {
+            border: 2px solid;
+            border-image: linear-gradient(to right, #00f0ff, #8a2be2, #ff00ff) 1; /* Neon gradient border */
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.5), 0 0 25px rgba(138, 43, 226, 0.5); /* Glowing effect */
+        }
+
+        .good-vibes-text-glow {
+            text-shadow: 0 0 5px rgba(0, 240, 255, 0.7), 0 0 10px rgba(138, 43, 226, 0.7);
+        }
+
+        .news-card {
+            background-color: #1a1a1a; /* Slightly lighter dark background for cards */
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 240, 255, 0.1), 0 0 10px rgba(138, 43, 226, 0.1);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .news-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 240, 255, 0.2), 0 0 15px rgba(138, 43, 226, 0.2);
+        }
+
+        .breaking-news-item {
+            background-color: #2a0a3a; /* Darker purple for breaking news */
+            border-left: 4px solid #ff00ff; /* Pink neon accent */
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #00f0ff; /* Cyan for loading */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .nav-link {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: #e0e0e0; /* Light grey text for nav links */
+            background-color: #1a1a1a; /* Dark background */
+            border: 1px solid #333; /* Darker border */
+        }
+
+        .nav-link:hover {
+            background-color: #2a2a2a;
+            color: #00f0ff; /* Cyan hover text */
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+        }
+
+        .nav-link.active {
+            background-color: #00f0ff; /* Active cyan background */
+            color: #0a0a0a; /* Dark text for active */
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.7);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4 md:p-8">
+
+    <div id="tailwind-warning" class="hidden fixed top-0 left-0 w-full bg-red-800 text-white p-3 text-center z-50 rounded-b-lg shadow-lg">
+        <p>Warning: Site styling may be affected. Tailwind CSS CDN might be unreachable. Please check your internet connection or try again later.</p>
+    </div>
+
+    <header class="w-full max-w-6xl text-center mb-8">
+        <h1 class="text-5xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-500 to-fuchsia-500 good-vibes-text-glow rounded-xl p-4">
+            <span class="block">CYBERPUNK</span>
+            <span class="block text-3xl md:text-4xl">NEWS HUB</span>
+        </h1>
+        <p class="text-lg text-gray-400 mt-2">Your daily dose of optimism and global updates.</p>
+    </header>
+
+    <nav class="w-full max-w-3xl flex flex-wrap justify-center space-x-2 md:space-x-4 mb-8">
+        <a id="nav-india" class="nav-link active" data-page="india">🇮🇳 Positive India</a>
+        <a id="nav-world" class="nav-link" data-page="world">🌍 Positive World</a>
+        <a id="nav-breaking" class="nav-link" data-page="breaking">⚡ Breaking News</a>
+    </nav>
+
+    <main class="w-full max-w-6xl">
+        <!-- Main content sections use grid. On small screens (default), they stack in a single column.
+             On large screens (lg:), they arrange into a 3-column layout. -->
+        <div id="india-page" class="page-content grid grid-cols-1 gap-8 lg:grid-cols-1">
+            <section class="bg-gray-900 p-6 rounded-2xl shadow-lg good-vibes-gradient-border flex flex-col">
+                <h2 class="text-3xl font-semibold mb-6 text-cyan-400 good-vibes-text-glow">
+                    <span class="mr-2">🇮🇳</span> Positive India Pulse
+                </h2>
+                <div id="india-news-container" class="space-y-6 flex-grow">
+                    <div class="flex justify-center items-center h-48">
+                        <div class="loading-spinner"></div>
+                        <p class="ml-4 text-purple-400">Loading positive news from India...</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div id="world-page" class="page-content hidden grid grid-cols-1 gap-8 lg:grid-cols-1">
+            <section class="bg-gray-900 p-6 rounded-2xl shadow-lg good-vibes-gradient-border flex flex-col">
+                <h2 class="text-3xl font-semibold mb-6 text-purple-400 good-vibes-text-glow">
+                    <span class="mr-2">🌍</span> Positive World News
+                </h2>
+                <div id="world-news-container" class="space-y-6 flex-grow">
+                    <div class="flex justify-center items-center h-48">
+                        <div class="loading-spinner"></div>
+                        <p class="ml-4 text-fuchsia-400">Loading positive news from around the world...</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div id="breaking-page" class="page-content hidden grid grid-cols-1 gap-8 lg:grid-cols-1">
+            <section class="bg-gray-900 p-6 rounded-2xl shadow-lg good-vibes-gradient-border flex flex-col">
+                <h2 class="text-3xl font-semibold mb-6 text-fuchsia-400 good-vibes-text-glow">
+                    <span class="mr-2">⚡</span> Global Breaking Feed
+                </h2>
+                <div id="breaking-news-container" class="space-y-4 flex-grow">
+                    <div class="flex justify-center items-center h-48">
+                        <div class="loading-spinner"></div>
+                        <p class="ml-4 text-cyan-400">Fetching breaking news...</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <footer class="w-full max-w-6xl text-center mt-12 py-4 border-t border-gray-700 text-gray-500 text-sm">
+        <p>&copy; 2025 Cyberpunk News Hub. All rights reserved. Data refreshes hourly.</p>
+    </footer>
+
+    <script type="module">
+        // Global variables for Firebase configuration and authentication (if needed for future features)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let currentPage = 'india'; // State to keep track of the current active page
+        let refreshIntervalId; // To store the interval ID for clearing
+
+        /**
+         * Fetches text-based news content from the Gemini API.
+         * @param {string} prompt - The prompt for text generation.
+         * @param {object} schema - The JSON schema for the expected response.
+         * @returns {Promise<Array>} A promise that resolves to an array of news items.
+         */
+        async function fetchNews(prompt, schema) {
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+            const payload = {
+                contents: chatHistory,
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: schema
+                }
+            };
+
+            const apiKey = ""; // Canvas will automatically provide the API key at runtime. DO NOT hardcode sensitive API keys here.
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`Gemini API Text Generation Error: ${response.status} - ${errorText}`);
+                    throw new Error(`API error: ${response.status} - ${errorText}`);
+                }
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const jsonString = result.candidates[0].content.parts[0].text;
+                    try {
+                        return JSON.parse(jsonString);
+                    } catch (parseError) {
+                        console.error("Error parsing JSON from Gemini API:", parseError, "Raw JSON:", jsonString);
+                        return [];
+                    }
+                } else {
+                    console.error("Unexpected API response structure for text generation:", result);
+                    if (result.promptFeedback && result.promptFeedback.safetyRatings) {
+                        console.error("Safety ratings:", result.promptFeedback.safetyRatings);
+                    }
+                    return [];
+                }
+            } catch (error) {
+                console.error("Error fetching news from Gemini API:", error.message, error);
+                return [];
+            }
+        }
+
+        /**
+         * Generates a placeholder image URL based on the news headline.
+         * This is a fast alternative to AI image generation for performance.
+         * @param {string} headline - The news headline to use for the image text.
+         * @param {string} themeColor - A hex color for the text in the placeholder image.
+         * @returns {string} A URL for a placeholder image.
+         */
+        function getPlaceholderImageUrl(headline, themeColor = '00f0ff') {
+            const sanitizedHeadline = encodeURIComponent(headline.substring(0, 20)); // Use first 20 chars for brevity
+            return `https://placehold.co/120x90/1a1a1a/${themeColor}?text=${sanitizedHeadline}`;
+        }
+
+        /**
+         * Displays news items in the specified container, including placeholder images.
+         * @param {string} containerId - The ID of the HTML container element.
+         * @param {Array} newsItems - An array of news objects.
+         * @param {string} themeColor - Hex color for the image text.
+         */
+        async function displayNews(containerId, newsItems, themeColor = '00f0ff') {
+            const container = document.getElementById(containerId);
+            container.innerHTML = ''; // Clear previous news
+
+            if (newsItems.length === 0) {
+                container.innerHTML = `<p class="text-center text-red-400">Failed to load news. Please try refreshing or check console for errors.</p>`;
+                return;
+            }
+
+            newsItems.forEach(item => {
+                const newsCard = document.createElement('div');
+                // News cards use flex-col by default (mobile) and flex-row on medium screens (md:)
+                newsCard.className = `news-card p-4 rounded-lg flex flex-col md:flex-row items-start gap-4`;
+                if (containerId === 'breaking-news-container') {
+                    newsCard.classList.add('breaking-news-item');
+                }
+
+                const imageUrl = getPlaceholderImageUrl(item.headline, themeColor);
+
+                newsCard.innerHTML = `
+                    <img src="${imageUrl}" alt="${item.headline}" class="w-full md:w-32 h-auto object-cover rounded-md" onerror="this.onerror=null;this.src='https://placehold.co/120x90/1a1a1a/ff00ff?text=Error';">
+                    <div class="flex-grow">
+                        <h3 class="text-xl font-semibold mb-2 ${containerId === 'india-news-container' ? 'text-cyan-400' : (containerId === 'world-news-container' ? 'text-purple-400' : 'text-fuchsia-400')}">${item.headline}</h3>
+                        <p class="text-gray-400 text-sm mb-3">${item.summary}</p>
+                    </div>
+                `;
+                container.appendChild(newsCard);
+            });
+        }
+
+        /**
+         * Updates the news for the specified page.
+         * @param {string} pageName - The name of the page to update ('india', 'world', or 'breaking').
+         */
+        async function updateNewsForPage(pageName) {
+            const newsSchema = {
+                type: "ARRAY",
+                items: {
+                    type: "OBJECT",
+                    properties: {
+                        "headline": { "type": "STRING" },
+                        "summary": { "type": "STRING" }
+                    },
+                    "propertyOrdering": ["headline", "summary"]
+                }
+            };
+
+            let containerId;
+            let prompt;
+            let themeColor;
+
+            if (pageName === 'india') {
+                containerId = 'india-news-container';
+                prompt = "Generate 5 positive news headlines and short summaries (2-3 sentences each) from India. Focus on achievements, progress, innovation, and community success.";
+                themeColor = '00f0ff'; // Cyan
+            } else if (pageName === 'world') {
+                containerId = 'world-news-container';
+                prompt = "Generate 5 positive news headlines and short summaries (2-3 sentences each) from around the world. Focus on global progress, environmental successes, scientific breakthroughs, and international cooperation.";
+                themeColor = '8a2be2'; // BlueViolet
+            } else if (pageName === 'breaking') {
+                containerId = 'breaking-news-container';
+                prompt = "Generate 5 recent, significant, and neutral breaking news headlines and short summaries (2-3 sentences each) from around the world. Avoid overly negative or controversial topics, focusing on factual updates.";
+                themeColor = 'ff00ff'; // Fuchsia
+            }
+
+            document.getElementById(containerId).innerHTML = `
+                <div class="flex justify-center items-center h-48">
+                    <div class="loading-spinner"></div>
+                    <p class="ml-4 text-gray-400">Loading ${pageName} news...</p>
+                </div>
+            `;
+
+            const news = await fetchNews(prompt, newsSchema);
+            await displayNews(containerId, news, themeColor);
+            console.log(`News updated for ${pageName} page.`);
+        }
+
+        /**
+         * Shows the selected page and updates the active navigation link.
+         * @param {string} pageName - The name of the page to show ('india', 'world', or 'breaking').
+         */
+        function showPage(pageName) {
+            // Hide all page content divs
+            document.querySelectorAll('.page-content').forEach(div => {
+                div.classList.add('hidden');
+            });
+
+            // Show the selected page content div
+            document.getElementById(`${pageName}-page`).classList.remove('hidden');
+
+            // Update active class on navigation links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.getElementById(`nav-${pageName}`).classList.add('active');
+
+            currentPage = pageName; // Update the current page state
+
+            // Clear existing interval and set a new one for the current page
+            if (refreshIntervalId) {
+                clearInterval(refreshIntervalId);
+            }
+            // Immediately update news for the newly selected page
+            updateNewsForPage(currentPage);
+            // Set up hourly refresh for the current page
+            refreshIntervalId = setInterval(() => updateNewsForPage(currentPage), 3600000);
+        }
+
+        // Event listeners for navigation links
+        document.getElementById('nav-india').addEventListener('click', () => showPage('india'));
+        document.getElementById('nav-world').addEventListener('click', () => showPage('world'));
+        document.getElementById('nav-breaking').addEventListener('click', () => showPage('breaking'));
+
+        // Initial load: show India page and start its refresh interval
+        window.onload = () => {
+            showPage('india'); // This will also trigger the initial news fetch and interval setup
+        };
+
+        // Check if Tailwind CSS loaded after a short delay
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const testDiv = document.createElement('div');
+                testDiv.className = 'flex'; // A simple Tailwind class to check
+                document.body.appendChild(testDiv);
+                const computedStyle = window.getComputedStyle(testDiv);
+                // If 'flex' property is not applied, it's likely Tailwind CSS didn't load
+                if (computedStyle.display !== 'flex') {
+                    document.getElementById('tailwind-warning').classList.remove('hidden');
+                }
+                document.body.removeChild(testDiv); // Clean up the test div
+            }, 1000); // Give Tailwind a moment to load and apply styles
+        });
+    </script>
+</body>
+</html>
